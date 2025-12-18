@@ -46,6 +46,13 @@ public class BreezWalletManager
         }
 
         // Configure Breez SDK
+        var nodeConfig = new NodeConfig.Greenlight(
+            config: new GreenlightNodeConfig(
+                partnerCredentials: null,
+                inviteCode: null
+            )
+        );
+
         var config = new Config(
             breezserver: "https://bs1.breez.technology",
             chainnotifierUrl: "https://chainnotifier.breez.technology",
@@ -56,11 +63,13 @@ public class BreezWalletManager
             defaultLspId: "LSP_LNBITS_BREEZ",
             apiKey: null,
             maxfeePercent: 0.5,
-            exemptfeeMsat: 5000
+            exemptfeeMsat: 5000,
+            nodeConfig: nodeConfig
         );
 
         // Create seed from mnemonic
-        var seed = _mnemonic.DeriveSeed();
+        var seedBytes = _mnemonic.DeriveSeed();
+        var seed = new List<byte>(seedBytes);
 
         Log.Information("Connecting to Breez SDK...");
 
@@ -131,7 +140,7 @@ public class BreezWalletManager
         EnsureInitialized();
 
         // Parse the input (could be invoice or address)
-        var parseResult = await Task.Run(() => _sdk!.Parse(destination));
+        var parseResult = await Task.Run(() => _sdk!.ParseInput(destination));
 
         if (parseResult is InputType.Bolt11 bolt11Input)
         {
@@ -182,8 +191,8 @@ public class BreezWalletManager
         return new SwapInfo
         {
             Address = response.bitcoinAddress,
-            MinSats = response.minAllowedDeposit,
-            MaxSats = response.maxAllowedDeposit,
+            MinSats = (ulong)response.minAllowedDeposit,
+            MaxSats = (ulong)response.maxAllowedDeposit,
             FeeSats = 0 // Fee is percentage-based
         };
     }
