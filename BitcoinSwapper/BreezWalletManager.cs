@@ -140,7 +140,7 @@ public class BreezWalletManager
         EnsureInitialized();
 
         // Parse the input (could be invoice or address)
-        var parseResult = await Task.Run(() => _sdk!.ParseInput(destination));
+        var parseResult = await Task.Run(() => BreezSdkMethods.ParseInput(destination));
 
         if (parseResult is InputType.Bolt11 bolt11Input)
         {
