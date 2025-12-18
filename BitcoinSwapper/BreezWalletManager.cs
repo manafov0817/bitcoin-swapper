@@ -58,20 +58,19 @@ public class BreezWalletManager
             maxfeePercent: 0.5
         );
 
-        // Create Greenlight credentials from seed
+        // Create seed from mnemonic
         var seed = _mnemonic.DeriveSeed();
-        var greenlightCredentials = new GreenlightCredentials(seed);
 
         Log.Information("Connecting to Breez SDK...");
 
         try
         {
             // Connect to Breez SDK
-            _sdk = await BreezSdkMethods.Connect(
+            _sdk = await Task.Run(() => BreezSdkMethods.Connect(
                 config: config,
                 seed: seed,
                 listener: new BreezEventListener()
-            );
+            ));
 
             Log.Information("✅ Connected to Breez SDK successfully");
         }
@@ -89,7 +88,7 @@ public class BreezWalletManager
     {
         EnsureInitialized();
 
-        var nodeInfo = await _sdk!.NodeInfoAsync();
+        var nodeInfo = await Task.Run(() => _sdk!.NodeInfo());
 
         return new BalanceInfo
         {
@@ -114,7 +113,7 @@ public class BreezWalletManager
             description: description ?? "Bitcoin Swapper Payment"
         );
 
-        var response = await _sdk!.ReceivePaymentAsync(request);
+        var response = await Task.Run(() => _sdk!.ReceivePayment(request));
 
         return response.LnInvoice.Bolt11;
     }
@@ -127,7 +126,7 @@ public class BreezWalletManager
         EnsureInitialized();
 
         // Parse the input (could be invoice or address)
-        var parseResult = await _sdk!.ParseInputAsync(destination);
+        var parseResult = await Task.Run(() => _sdk!.ParseInput(destination));
 
         if (parseResult is InputType.Bolt11 bolt11Input)
         {
@@ -139,7 +138,7 @@ public class BreezWalletManager
                 amountMsat: amountMsat
             );
 
-            var response = await _sdk!.SendPaymentAsync(request);
+            var response = await Task.Run(() => _sdk!.SendPayment(request));
 
             return new PaymentResult
             {
@@ -171,7 +170,7 @@ public class BreezWalletManager
         EnsureInitialized();
 
         var request = new ReceiveOnchainRequest();
-        var response = await _sdk!.ReceiveOnchainAsync(request);
+        var response = await Task.Run(() => _sdk!.ReceiveOnchain(request));
 
         return new SwapInfo
         {
@@ -196,7 +195,7 @@ public class BreezWalletManager
             satPerVbyte: 1
         );
 
-        var response = await _sdk!.SendOnchainAsync(request);
+        var response = await Task.Run(() => _sdk!.SendOnchain(request));
 
         return new PaymentResult
         {
@@ -216,7 +215,7 @@ public class BreezWalletManager
         EnsureInitialized();
 
         var request = new ListPaymentsRequest();
-        var payments = await _sdk!.ListPaymentsAsync(request);
+        var payments = await Task.Run(() => _sdk!.ListPayments(request));
 
         return payments
             .Take(limit)
@@ -239,7 +238,7 @@ public class BreezWalletManager
     {
         if (_sdk != null)
         {
-            await _sdk.DisconnectAsync();
+            await Task.Run(() => _sdk.Disconnect());
             _sdk = null;
             Log.Information("Disconnected from Breez SDK");
         }
