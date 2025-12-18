@@ -51,11 +51,12 @@ public class BreezWalletManager
             chainnotifierUrl: "https://chainnotifier.breez.technology",
             mempoolspaceUrl: "https://mempool.space/api",
             workingDir: _workingDir,
-            network: Network.Bitcoin,
+            network: Breez.Sdk.Network.Bitcoin,
             paymentTimeoutSec: 60,
             defaultLspId: "LSP_LNBITS_BREEZ",
             apiKey: null,
-            maxfeePercent: 0.5
+            maxfeePercent: 0.5,
+            exemptfeeMsat: 5000
         );
 
         // Create seed from mnemonic
@@ -66,9 +67,13 @@ public class BreezWalletManager
         try
         {
             // Connect to Breez SDK
-            _sdk = await Task.Run(() => BreezSdkMethods.Connect(
+            var connectRequest = new ConnectRequest(
                 config: config,
-                seed: seed,
+                seed: seed
+            );
+
+            _sdk = await Task.Run(() => BreezSdkMethods.Connect(
+                req: connectRequest,
                 listener: new BreezEventListener()
             ));
 
@@ -92,9 +97,9 @@ public class BreezWalletManager
 
         return new BalanceInfo
         {
-            LightningSats = nodeInfo.channelsBalanceMsat / 1000,
+            LightningSats = (ulong)(nodeInfo.channelsBalanceMsat / 1000),
             OnchainSats = 0, // Breez primarily uses Lightning
-            TotalSats = nodeInfo.channelsBalanceMsat / 1000,
+            TotalSats = (ulong)(nodeInfo.channelsBalanceMsat / 1000),
             TotalBtc = (nodeInfo.channelsBalanceMsat / 1000) / 100_000_000.0
         };
     }
@@ -126,16 +131,18 @@ public class BreezWalletManager
         EnsureInitialized();
 
         // Parse the input (could be invoice or address)
-        var parseResult = await Task.Run(() => _sdk!.ParseInput(destination));
+        var parseResult = await Task.Run(() => _sdk!.Parse(destination));
 
         if (parseResult is InputType.Bolt11 bolt11Input)
         {
             // Lightning payment
-            var amountMsat = amountSats.HasValue ? amountSats.Value * 1000 : null;
+            ulong? amountMsat = amountSats.HasValue ? (ulong?)(amountSats.Value * 1000) : null;
 
             var request = new SendPaymentRequest(
                 bolt11: bolt11Input.invoice.bolt11,
-                amountMsat: amountMsat
+                useTrampoline: false,
+                amountMsat: amountMsat,
+                label: null
             );
 
             var response = await Task.Run(() => _sdk!.SendPayment(request));
@@ -143,8 +150,8 @@ public class BreezWalletManager
             return new PaymentResult
             {
                 PaymentHash = response.payment.id,
-                AmountSats = response.payment.amountMsat / 1000,
-                FeeSats = response.payment.feeMsat / 1000,
+                AmountSats = (ulong)(response.payment.amountMsat / 1000),
+                FeeSats = (ulong)(response.payment.feeMsat / 1000),
                 Status = "Success"
             };
         }
@@ -188,21 +195,29 @@ public class BreezWalletManager
     {
         EnsureInitialized();
 
-        var request = new SendOnchainRequest(
+        // Prepare the onchain payment first
+        var prepareRequest = new PrepareOnchainPaymentRequest(
             amountSat: amountSats,
-            onchainRecipientAddress: address,
-            pairHash: "",
-            satPerVbyte: 1
+            amountType: SwapAmountType.Receive,
+            claimTxFeerate: 1
         );
 
-        var response = await Task.Run(() => _sdk!.SendOnchain(request));
+        var prepareResponse = await Task.Run(() => _sdk!.PrepareOnchainPayment(prepareRequest));
+
+        // Execute the payment
+        var payRequest = new PayOnchainRequest(
+            recipientAddress: address,
+            prepareRes: prepareResponse
+        );
+
+        var payResponse = await Task.Run(() => _sdk!.PayOnchain(payRequest));
 
         return new PaymentResult
         {
             PaymentHash = "",
             TxId = "",
             AmountSats = amountSats,
-            FeeSats = 0,
+            FeeSats = (ulong)payResponse.reverseSwapInfo.onchainAmountSat,
             Status = "Pending"
         };
     }
@@ -222,8 +237,8 @@ public class BreezWalletManager
             .Select(p => new TransactionInfo
             {
                 Type = p.paymentType.ToString(),
-                AmountSats = p.amountMsat / 1000,
-                FeeSats = p.feeMsat / 1000,
+                AmountSats = (ulong)(p.amountMsat / 1000),
+                FeeSats = (ulong)(p.feeMsat / 1000),
                 Timestamp = DateTimeOffset.FromUnixTimeSeconds(p.paymentTime).DateTime,
                 Status = p.status.ToString(),
                 IsIncoming = p.paymentType == PaymentType.Received
@@ -256,7 +271,7 @@ public class BreezWalletManager
 /// </summary>
 public class BreezEventListener : EventListener
 {
-    public override void OnEvent(BreezEvent e)
+    public void OnEvent(BreezEvent e)
     {
         Log.Information("Breez Event: {EventType}", e.GetType().Name);
 
