@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Breez SDK for .NET -->
+    <PackageReference Include="BreezSdk" Version="0.5.1" />
+
+    <!-- BIP39 for seed phrase generation/validation -->
+    <PackageReference Include="NBitcoin" Version="7.0.37" />
+
+    <!-- JSON handling -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+
+    <!-- Logging -->
+    <PackageReference Include="Serilog" Version="3.1.1" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+  </ItemGroup>
+
+</Project>
