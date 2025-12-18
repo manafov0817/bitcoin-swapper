@@ -1,9 +1,14 @@
 using NBitcoin;
 using Breez.Sdk;
 using Serilog;
+using BitcoinSwapper.Models;
+using BitcoinSwapper.Listeners;
 
-namespace BitcoinSwapper;
+namespace BitcoinSwapper.Services;
 
+/// <summary>
+/// Manages Bitcoin wallet operations using Breez SDK
+/// </summary>
 public class BreezWalletManager
 {
     private BlockingBreezServices? _sdk;
@@ -273,67 +278,4 @@ public class BreezWalletManager
         if (_sdk == null)
             throw new InvalidOperationException("Wallet not initialized. Call InitializeWallet first.");
     }
-}
-
-/// <summary>
-/// Event listener for Breez SDK events
-/// </summary>
-public class BreezEventListener : EventListener
-{
-    public void OnEvent(BreezEvent e)
-    {
-        Log.Information("Breez Event: {EventType}", e.GetType().Name);
-
-        switch (e)
-        {
-            case BreezEvent.InvoicePaid invoicePaid:
-                Log.Information("Invoice paid: {PaymentHash}", invoicePaid.details.payment.id);
-                break;
-            case BreezEvent.PaymentSucceed paymentSucceed:
-                Log.Information("Payment succeeded: {PaymentHash}", paymentSucceed.details.id);
-                break;
-            case BreezEvent.PaymentFailed paymentFailed:
-                Log.Error("Payment failed: {Error}", paymentFailed.details.error);
-                break;
-            case BreezEvent.Synced synced:
-                Log.Information("Synced");
-                break;
-        }
-    }
-}
-
-// Data models
-public class BalanceInfo
-{
-    public ulong LightningSats { get; set; }
-    public ulong OnchainSats { get; set; }
-    public ulong TotalSats { get; set; }
-    public double TotalBtc { get; set; }
-}
-
-public class PaymentResult
-{
-    public string PaymentHash { get; set; } = "";
-    public string TxId { get; set; } = "";
-    public ulong AmountSats { get; set; }
-    public ulong FeeSats { get; set; }
-    public string Status { get; set; } = "";
-}
-
-public class SwapInfo
-{
-    public string Address { get; set; } = "";
-    public ulong MinSats { get; set; }
-    public ulong MaxSats { get; set; }
-    public ulong FeeSats { get; set; }
-}
-
-public class TransactionInfo
-{
-    public string Type { get; set; } = "";
-    public ulong AmountSats { get; set; }
-    public ulong FeeSats { get; set; }
-    public DateTime Timestamp { get; set; }
-    public string Status { get; set; } = "";
-    public bool IsIncoming { get; set; }
 }

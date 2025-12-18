@@ -1,4 +1,5 @@
-using BitcoinSwapper;
+using BitcoinSwapper.Services;
+using BitcoinSwapper.Models;
 using Serilog;
 
 // Setup logging
