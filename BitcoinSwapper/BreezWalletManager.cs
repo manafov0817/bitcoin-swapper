@@ -92,10 +92,10 @@ public class BreezWalletManager
 
         return new BalanceInfo
         {
-            LightningSats = nodeInfo.ChannelsBalanceMsat / 1000,
+            LightningSats = nodeInfo.channelsBalanceMsat / 1000,
             OnchainSats = 0, // Breez primarily uses Lightning
-            TotalSats = nodeInfo.ChannelsBalanceMsat / 1000,
-            TotalBtc = (nodeInfo.ChannelsBalanceMsat / 1000) / 100_000_000.0
+            TotalSats = nodeInfo.channelsBalanceMsat / 1000,
+            TotalBtc = (nodeInfo.channelsBalanceMsat / 1000) / 100_000_000.0
         };
     }
 
@@ -115,7 +115,7 @@ public class BreezWalletManager
 
         var response = await Task.Run(() => _sdk!.ReceivePayment(request));
 
-        return response.LnInvoice.Bolt11;
+        return response.lnInvoice.bolt11;
     }
 
     /// <summary>
@@ -134,7 +134,7 @@ public class BreezWalletManager
             var amountMsat = amountSats.HasValue ? amountSats.Value * 1000 : null;
 
             var request = new SendPaymentRequest(
-                bolt11: bolt11Input.Invoice.Bolt11,
+                bolt11: bolt11Input.invoice.Bolt11,
                 amountMsat: amountMsat
             );
 
@@ -142,9 +142,9 @@ public class BreezWalletManager
 
             return new PaymentResult
             {
-                PaymentHash = response.Payment.Id,
-                AmountSats = response.Payment.AmountMsat / 1000,
-                FeeSats = response.Payment.FeeMsat / 1000,
+                PaymentHash = response.payment.id,
+                AmountSats = response.payment.amountMsat / 1000,
+                FeeSats = response.payment.feeMsat / 1000,
                 Status = "Success"
             };
         }
