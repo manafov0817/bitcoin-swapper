@@ -134,7 +134,7 @@ public class BreezWalletManager
             var amountMsat = amountSats.HasValue ? amountSats.Value * 1000 : null;
 
             var request = new SendPaymentRequest(
-                bolt11: bolt11Input.invoice.Bolt11,
+                bolt11: bolt11Input.invoice.bolt11,
                 amountMsat: amountMsat
             );
 
@@ -174,9 +174,9 @@ public class BreezWalletManager
 
         return new SwapInfo
         {
-            Address = response.BitcoinAddress,
-            MinSats = response.MinAllowedDeposit,
-            MaxSats = response.MaxAllowedDeposit,
+            Address = response.bitcoinAddress,
+            MinSats = response.minAllowedDeposit,
+            MaxSats = response.maxAllowedDeposit,
             FeeSats = 0 // Fee is percentage-based
         };
     }
@@ -221,12 +221,12 @@ public class BreezWalletManager
             .Take(limit)
             .Select(p => new TransactionInfo
             {
-                Type = p.PaymentType.ToString(),
-                AmountSats = p.AmountMsat / 1000,
-                FeeSats = p.FeeMsat / 1000,
-                Timestamp = DateTimeOffset.FromUnixTimeSeconds(p.PaymentTime).DateTime,
-                Status = p.Status.ToString(),
-                IsIncoming = p.PaymentType == PaymentType.Received
+                Type = p.paymentType.ToString(),
+                AmountSats = p.amountMsat / 1000,
+                FeeSats = p.feeMsat / 1000,
+                Timestamp = DateTimeOffset.FromUnixTimeSeconds(p.paymentTime).DateTime,
+                Status = p.status.ToString(),
+                IsIncoming = p.paymentType == PaymentType.Received
             })
             .ToList();
     }
@@ -263,13 +263,13 @@ public class BreezEventListener : EventListener
         switch (e)
         {
             case BreezEvent.InvoicePaid invoicePaid:
-                Log.Information("Invoice paid: {PaymentHash}", invoicePaid.Details.Payment.Id);
+                Log.Information("Invoice paid: {PaymentHash}", invoicePaid.details.payment.id);
                 break;
             case BreezEvent.PaymentSucceed paymentSucceed:
-                Log.Information("Payment succeeded: {PaymentHash}", paymentSucceed.Details.Id);
+                Log.Information("Payment succeeded: {PaymentHash}", paymentSucceed.details.id);
                 break;
             case BreezEvent.PaymentFailed paymentFailed:
-                Log.Error("Payment failed: {Error}", paymentFailed.Details.Error);
+                Log.Error("Payment failed: {Error}", paymentFailed.details.error);
                 break;
             case BreezEvent.Synced synced:
                 Log.Information("Synced");
