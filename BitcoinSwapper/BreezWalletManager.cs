@@ -67,7 +67,7 @@ public class BreezWalletManager
         try
         {
             // Connect to Breez SDK
-            _sdk = await BreezSdkMethods.ConnectAsync(
+            _sdk = await BreezSdkMethods.Connect(
                 config: config,
                 seed: seed,
                 listener: new BreezEventListener()

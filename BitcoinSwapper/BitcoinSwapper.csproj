@@ -10,9 +10,9 @@
 
   <ItemGroup>
     <!-- Breez SDK for .NET -->
-    <PackageReference Include="BreezSdk" Version="0.5.1" />
 
     <!-- BIP39 for seed phrase generation/validation -->
+    <PackageReference Include="Breez.Sdk" Version="0.8.0" />
     <PackageReference Include="NBitcoin" Version="7.0.37" />
 
     <!-- JSON handling -->
